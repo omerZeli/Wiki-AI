@@ -8,7 +8,7 @@ interface Message {
   text: string;
 }
 
-const API_URL = "http://localhost:3001/api/chat";
+const API_URL = `${import.meta.env.VITE_API_URL}/api/chat`;
 
 export default function ChatPage() {
   const [messages, setMessages] = useState<Message[]>([]);

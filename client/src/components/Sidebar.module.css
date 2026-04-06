@@ -1,0 +1,141 @@
+.overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.25);
+  z-index: 90;
+  animation: fadeIn 0.15s ease;
+}
+
+.sidebar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  bottom: 0;
+  width: 280px;
+  background: var(--bg-secondary);
+  border-right: 1px solid var(--border);
+  z-index: 100;
+  display: flex;
+  flex-direction: column;
+  transform: translateX(-100%);
+  transition: transform 0.2s ease;
+}
+
+.sidebar.open {
+  transform: translateX(0);
+}
+
+.sidebarHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.75rem 1rem;
+  border-bottom: 1px solid var(--border);
+}
+
+.sidebarTitle {
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.closeBtn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--text-secondary);
+  padding: 0.25rem;
+  display: flex;
+  align-items: center;
+  border-radius: 0.25rem;
+}
+
+.closeBtn:hover {
+  background: var(--bg-input);
+}
+
+.newChatBtn {
+  margin: 0.75rem 1rem 0.5rem;
+  padding: 0.5rem 0.75rem;
+  border: 1px dashed var(--border);
+  border-radius: 0.5rem;
+  background: transparent;
+  color: var(--text-secondary);
+  font-size: 0.85rem;
+  font-family: inherit;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+}
+
+.newChatBtn:hover {
+  background: var(--bg-input);
+  color: var(--text-primary);
+}
+
+.list {
+  flex: 1;
+  overflow-y: auto;
+  padding: 0.5rem 0;
+}
+
+.item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.6rem 1rem;
+  cursor: pointer;
+  transition: background 0.1s;
+  gap: 0.5rem;
+}
+
+.item:hover {
+  background: var(--bg-input);
+}
+
+.itemActive {
+  background: var(--bg-input);
+}
+
+.itemTitle {
+  flex: 1;
+  font-size: 0.85rem;
+  color: var(--text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.deleteBtn {
+  flex-shrink: 0;
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--text-muted);
+  padding: 0.2rem;
+  display: flex;
+  align-items: center;
+  border-radius: 0.25rem;
+  opacity: 0;
+  transition: opacity 0.1s;
+}
+
+.item:hover .deleteBtn {
+  opacity: 1;
+}
+
+.deleteBtn:hover {
+  color: #e55;
+  background: rgba(229, 85, 85, 0.1);
+}
+
+.empty {
+  padding: 2rem 1rem;
+  text-align: center;
+  color: var(--text-muted);
+  font-size: 0.85rem;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}

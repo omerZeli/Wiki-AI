@@ -8,6 +8,7 @@
 .header {
   display: flex;
   align-items: center;
+  justify-content: space-between;
   padding: 0.75rem 1.25rem;
   border-bottom: 1px solid var(--border);
   background: var(--bg-secondary);
@@ -16,6 +17,34 @@
 .logo {
   font-size: 1.1rem;
   font-weight: 600;
+  color: var(--text-primary);
+}
+
+.headerRight {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.userName {
+  font-size: 0.875rem;
+  color: var(--text-secondary);
+}
+
+.logoutBtn {
+  padding: 0.35rem 0.75rem;
+  border: 1px solid var(--border);
+  border-radius: 0.375rem;
+  background: transparent;
+  color: var(--text-secondary);
+  font-size: 0.8rem;
+  font-family: inherit;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+}
+
+.logoutBtn:hover {
+  background: var(--bg-input);
   color: var(--text-primary);
 }
 

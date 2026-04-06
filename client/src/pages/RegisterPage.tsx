@@ -1,0 +1,92 @@
+import { useState, type FormEvent } from "react";
+import { Link, useNavigate } from "react-router-dom";
+import { useAuth } from "../context/AuthContext";
+import styles from "./AuthPage.module.css";
+
+const API_URL = `${import.meta.env.VITE_API_URL}/api/auth`;
+
+export default function RegisterPage() {
+  const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
+  const { login } = useAuth();
+  const navigate = useNavigate();
+
+  const handleSubmit = async (e: FormEvent) => {
+    e.preventDefault();
+    setError("");
+    setLoading(true);
+
+    try {
+      const res = await fetch(`${API_URL}/register`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name, email, password }),
+      });
+      const data = await res.json();
+
+      if (!res.ok) {
+        setError(data.error || "Registration failed");
+        return;
+      }
+
+      login(data.user, data.token);
+      navigate("/");
+    } catch {
+      setError("Could not reach the server.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className={styles.container}>
+      <form className={styles.form} onSubmit={handleSubmit}>
+        <h1 className={styles.title}>Create an account</h1>
+
+        {error && <p className={styles.error}>{error}</p>}
+
+        <label className={styles.label} htmlFor="name">Name</label>
+        <input
+          id="name"
+          className={styles.input}
+          type="text"
+          value={name}
+          onChange={(e) => setName(e.target.value)}
+          required
+        />
+
+        <label className={styles.label} htmlFor="email">Email</label>
+        <input
+          id="email"
+          className={styles.input}
+          type="email"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          required
+        />
+
+        <label className={styles.label} htmlFor="password">Password</label>
+        <input
+          id="password"
+          className={styles.input}
+          type="password"
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
+          required
+          minLength={6}
+        />
+
+        <button className={styles.button} type="submit" disabled={loading}>
+          {loading ? "Creating account…" : "Register"}
+        </button>
+
+        <p className={styles.link}>
+          Already have an account? <Link to="/login">Sign in</Link>
+        </p>
+      </form>
+    </div>
+  );
+}

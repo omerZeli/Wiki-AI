@@ -1,3 +1,4 @@
+import ReactMarkdown from "react-markdown";
 import styles from "./ChatMessage.module.css";
 
 interface Props {
@@ -12,7 +13,11 @@ export default function ChatMessage({ sender, text }: Props) {
         <img src="/wikiAILogo-sm.png" alt="Wiki AI" className={styles.avatar} />
       )}
       <div className={`${styles.bubble} ${sender === "user" ? styles.userBubble : styles.serverBubble}`}>
-        {text}
+        {sender === "server" ? (
+          <ReactMarkdown>{text}</ReactMarkdown>
+        ) : (
+          text
+        )}
       </div>
     </div>
   );

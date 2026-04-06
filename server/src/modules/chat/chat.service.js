@@ -9,8 +9,16 @@ async function saveMessage(conversationId, sender, text) {
 }
 
 async function getHistory(conversationId) {
+  // Fetch the last 10 messages (newest first), then reverse to chronological order
   const result = await pool.query(
-    "SELECT sender, text FROM messages WHERE conversation_id = $1 ORDER BY created_at ASC",
+    `SELECT sender, text FROM (
+       SELECT sender, text, created_at
+       FROM messages
+       WHERE conversation_id = $1
+       ORDER BY created_at DESC
+       LIMIT 10
+     ) AS recent
+     ORDER BY created_at ASC`,
     [conversationId]
   );
   return result.rows;

@@ -29,25 +29,6 @@ router.post("/", async (req, res) => {
     const history = await getHistory(convId);
     const result = await generateReply(history);
 
-    if (result.toolCalls) {
-      // Article fetched — ready for RAG processing
-      if (result.articleLength !== undefined) {
-        return res.json({
-          reply: result.text,
-          isSearching: false,
-          articleLength: result.articleLength,
-          conversationId: convId,
-        });
-      }
-
-      // Still in the search phase
-      return res.json({
-        reply: "I am searching Wikipedia for that information...",
-        isSearching: true,
-        conversationId: convId,
-      });
-    }
-
     await saveMessage(convId, "server", result.text);
     await updateTimestamp(convId);
 

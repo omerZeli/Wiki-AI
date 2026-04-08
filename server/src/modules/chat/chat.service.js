@@ -207,6 +207,7 @@ async function callGroq(messages, toolChoice = "auto") {
         messages,
         tools,
         tool_choice: toolChoice,
+        parallel_tool_calls: false,
       });
     } catch (err) {
       const isToolUseFailed =
@@ -262,7 +263,7 @@ async function rewriteQuery(history) {
       {
         role: "system",
         content:
-          "You are a contextual query rewriter. Look at the conversation history and rewrite the user's latest message into a self-contained, standalone question, resolving any pronouns (he, she, it, this, etc.) to their specific entities. Output ONLY the rewritten question string. Do not answer the question.",
+          "You are a contextual query rewriter. Your job is to rewrite the user's latest message into a standalone question using the conversation history.\n\nRULES:\n1. Resolve pronouns (e.g., 'he' -> 'Albert Einstein').\n2. Resolve contextual references.\n3. Keep the query AS SHORT AS POSSIBLE.\n4. CRITICAL: NEVER answer the question! If the user asks 'when was he born?', output 'When was Albert Einstein born?'. Do NOT output the actual answer (e.g., 'Albert Einstein was born in 1879.').\n\nOutput ONLY the rewritten question string.",
       },
       ...mapped,
     ],
@@ -274,7 +275,7 @@ async function rewriteQuery(history) {
 // ── Main reply generator with agentic ReAct loop ────────────────────────
 
 async function generateReply(history) {
-  const MAX_ITERATIONS = 4;
+  const MAX_ITERATIONS = 8;
 
   // Extract the user's original question (last user message)
   const userQuery =
@@ -286,13 +287,16 @@ async function generateReply(history) {
 
   const systemMessage = {
     role: "system",
-    content: `You are a helpful Wikipedia Research Assistant. Today's date is ${new Date().toISOString()}.
+    content: `You are a Wikipedia Research Assistant. Today's date is ${new Date().toISOString()}.
 
-- Factual questions: You must use the "search_wikipedia_query" tool first.
-- Reading articles: After searching, you will receive a list of results. To read the full article, you must use the "get_wikipedia_article" tool. You must provide the EXACT 'title' from one of the search results. Do not guess or invent article titles.
-- Research loop: If a tool returns "INFORMATION_NOT_FOUND", you must NOT give up. Think of a different search query, or fetch a different article from your previous search results, and try again.
-- General conversation: Reply naturally in plain text without calling functions.
-- Past history: Facts in the history are already verified. No need to research them again unless the user asks a new question.`,
+Research Protocol:
+1. Call 'search_wikipedia_query' to find articles.
+2. Review the list of results.
+3. Call 'get_wikipedia_article' to read the full text. CRITICAL: You must pass ONLY a single JSON object with the 'title' string (e.g., {"title": "Albert Einstein"}). NEVER pass the entire array of results, and do not add a colon to the tool name.
+4. If the RAG pipeline returns "INFORMATION_NOT_FOUND", try fetching a different title or searching new keywords.
+5. Once you have the facts, answer the user naturally in plain text.
+
+Do not guess facts from internal knowledge. Assume conversation history is already verified.`,
   };
 
   const groqMessages = [

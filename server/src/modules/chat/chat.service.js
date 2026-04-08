@@ -74,7 +74,15 @@ async function ragAnswer(userQuery, articleText, articleTitle) {
     messages: [
       {
         role: "system",
-        content: `You are a helpful research assistant. Answer the user's question based STRICTLY on the following Wikipedia excerpts from the article titled "${articleTitle}". If the answer is not contained in the excerpts, respond with exactly "INFORMATION_NOT_FOUND" and nothing else. Do not use any outside knowledge. Answer directly and naturally. NEVER start your answer with "According to the excerpt" or "Based on the text". Just provide the facts.\n\nExcerpts:\n${excerpts}`,
+        content: `You are a strict data extractor.
+
+Answer the user's question based STRICTLY on the following Wikipedia excerpts from the article titled "${articleTitle}". If the exact answer is not contained in the excerpts, respond with exactly "INFORMATION_NOT_FOUND" and nothing else.
+
+CRITICAL RULES:
+1. BLIND TRUST: Treat the text as the absolute truth. If the text says someone is the "current" president, accept it as the current reality regardless of the actual year.
+2. NEVER mention your "knowledge cutoff", training data, or internal limitations.
+3. NEVER add disclaimers about information being subject to change.
+4. Output ONLY the clear facts found directly in the text.\n\nExcerpts:\n${excerpts}`,
       },
       {
         role: "user",
@@ -97,13 +105,13 @@ const tools = [
     function: {
       name: "search_wikipedia_query",
       description:
-        "Use this tool FIRST to search Wikipedia for the correct article title based on keywords. Returns a list of potential article titles and snippets.",
+        "Searches Wikipedia for relevant article titles based on keywords. Always use this first to find exact titles.",
       parameters: {
         type: "object",
         properties: {
           query: {
             type: "string",
-            description: "The search keywords to look up on Wikipedia.",
+            description: "The search keywords.",
           },
         },
         required: ["query"],
@@ -116,7 +124,7 @@ const tools = [
     function: {
       name: "get_wikipedia_article",
       description:
-        "Use this tool SECOND to fetch the full text of a Wikipedia article using the exact title found via search_wikipedia_query.",
+        "Fetches the full text of a Wikipedia article. CRITICAL: You must pass ONLY a single exact article title as a string. NEVER pass an array of multiple results.",
       parameters: {
         type: "object",
         properties: {
@@ -159,6 +167,7 @@ async function getWikipediaArticle(title) {
     action: "query",
     prop: "extracts",
     explaintext: "true",
+    redirects: "1",
     titles: title,
     format: "json",
     origin: "*",
@@ -203,7 +212,7 @@ async function callGroq(messages, toolChoice = "auto") {
   for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
     try {
       return await groq.chat.completions.create({
-        model: "llama-3.3-70b-versatile",
+        model: "llama-3.1-8b-instant",
         messages,
         tools,
         tool_choice: toolChoice,
@@ -258,12 +267,23 @@ async function rewriteQuery(history) {
   }));
 
   const result = await groq.chat.completions.create({
-    model: "llama-3.3-70b-versatile",
+    model: "llama-3.1-8b-instant",
     messages: [
       {
         role: "system",
-        content:
-          "You are a contextual query rewriter. Your job is to rewrite the user's latest message into a standalone question using the conversation history.\n\nRULES:\n1. Resolve pronouns (e.g., 'he' -> 'Albert Einstein').\n2. Resolve contextual references.\n3. Keep the query AS SHORT AS POSSIBLE.\n4. CRITICAL: NEVER answer the question! If the user asks 'when was he born?', output 'When was Albert Einstein born?'. Do NOT output the actual answer (e.g., 'Albert Einstein was born in 1879.').\n\nOutput ONLY the rewritten question string.",
+        content: `You are a strict NLP query rewriter. Rewrite the user's latest message into a standalone string.
+
+CRITICAL RULES:
+1. Output ONLY the final rewritten question.
+2. NEVER add conversational filler (e.g., "I don't have information", "The rewritten question is:").
+3. If there is no previous context, just repeat the user's question exactly.
+
+EXAMPLES:
+User: who is the current president?
+Output: Who is the current president?
+
+User: when was he born?
+Output: When was he born? (Or resolve 'he' if context exists)`,
       },
       ...mapped,
     ],
@@ -287,16 +307,14 @@ async function generateReply(history) {
 
   const systemMessage = {
     role: "system",
-    content: `You are a Wikipedia Research Assistant. Today's date is ${new Date().toISOString()}.
+    content: `You are a strict data-routing API. You are NOT a conversational AI.
 
 Research Protocol:
-1. Call 'search_wikipedia_query' to find articles.
-2. Review the list of results.
-3. Call 'get_wikipedia_article' to read the full text. CRITICAL: You must pass ONLY a single JSON object with the 'title' string (e.g., {"title": "Albert Einstein"}). NEVER pass the entire array of results, and do not add a colon to the tool name.
-4. If the RAG pipeline returns "INFORMATION_NOT_FOUND", try fetching a different title or searching new keywords.
-5. Once you have the facts, answer the user naturally in plain text.
-
-Do not guess facts from internal knowledge. Assume conversation history is already verified.`,
+1. ALLOWED TOOLS: You have EXACTLY TWO tools available: 'search_wikipedia_query' and 'get_wikipedia_article'. Any attempt to call a different tool will crash the system.
+2. YOU MUST READ: Search snippets do NOT contain the answer. After a search, you MUST use 'get_wikipedia_article' to read the main conceptual article (e.g., "President of the United States"). AVOID "List of..." articles.
+3. ANTI-LAZY RULE: If the tool returns "INFORMATION_NOT_FOUND", search again with new keywords.
+4. NO INNER MONOLOGUE: Do not narrate your thought process.
+5. STRICT PASS-THROUGH (CRITICAL): Once the tool returns the factual answer, output exactly that text. Do not add warnings, notes, knowledge cutoffs, or disclaimers.`,
   };
 
   const groqMessages = [
@@ -329,6 +347,17 @@ Do not guess facts from internal knowledge. Assume conversation history is alrea
     // Otherwise, execute tools and feed results back into the loop
     for (const toolCall of assistantMessage.tool_calls) {
       const resultText = await executeTool(toolCall, standaloneQuery);
+
+      // SHORT-CIRCUIT: If the RAG pipeline found the answer, return it immediately to the user!
+      // This bypasses the 8B model's RLHF disclaimers entirely.
+      if (toolCall.function.name === "get_wikipedia_article" && !resultText.includes("INFORMATION_NOT_FOUND")) {
+        return {
+          text: resultText,
+          toolCalls: null,
+        };
+      }
+
+      // If it was just a search, or if the info was not found, feed it back to the loop
       groqMessages.push({
         role: "tool",
         tool_call_id: toolCall.id,

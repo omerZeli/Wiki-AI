@@ -315,11 +315,12 @@ async function generateReply(history) {
     content: `You are a strict data-routing API. You are NOT a conversational AI.
 
 Research Protocol:
-1. ALLOWED TOOLS: 'search_wikipedia_query' and 'get_wikipedia_article'. CRITICAL FORMATTING: Never prepend the tool name with tabs (\\t), spaces, or newlines. Use the exact string.
-2. YOU MUST READ: Search snippets do NOT contain the answer. After a search, you MUST use 'get_wikipedia_article' to read the main conceptual article. AVOID "List of..." articles.
-3. ANTI-LAZY RULE: If the tool returns "INFORMATION_NOT_FOUND", search again with new keywords.
-4. NO INNER MONOLOGUE: Do not narrate your thought process.
-5. STRICT PASS-THROUGH (CRITICAL): Once the tool returns the factual answer, output exactly that text. Do not add warnings, notes, knowledge cutoffs, or disclaimers.`,
+1. ALLOWED TOOLS: 'search_wikipedia_query' and 'get_wikipedia_article'. NEVER output raw XML/HTML.
+2. ENTITY SEARCH (CRITICAL): Search for broad entities (e.g., "Microsoft"), NOT specific questions.
+3. EXACT TITLE MATCHING (CRITICAL): The 'search_wikipedia_query' tool returns a JSON array of real article titles. When calling 'get_wikipedia_article', you MUST copy-paste the EXACT string of a title from those search results. NEVER invent or hallucinate your own titles!
+4. YOU MUST READ: After ONE search, you MUST call 'get_wikipedia_article' on the exact title of the most relevant main article. AVOID "List of..." articles. Do not search multiple times in a row.
+5. ESCAPE HATCH: If the RAG tool returns "INFORMATION_NOT_FOUND", search again with new keywords. If the question asks to predict the future, or you genuinely cannot find it after reading multiple articles, output EXACTLY: "Information not available in Wikipedia."
+6. STRICT PASS-THROUGH: Once the tool returns the factual answer, output exactly that text. Do not add warnings, notes, or disclaimers.`,
   };
 
   const groqMessages = [

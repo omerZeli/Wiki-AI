@@ -62,7 +62,7 @@ async function ragAnswer(userQuery, articleText, articleTitle) {
   const chunks = await chunkText(articleText);
   console.log(`Split article into ${chunks.length} chunks.`);
 
-  const topChunks = await findRelevantChunks(userQuery, chunks, 10);
+  const topChunks = await findRelevantChunks(userQuery, chunks, 8);
   console.log(`Found top ${topChunks.length} relevant chunks.`);
 
   const excerpts = topChunks
@@ -74,15 +74,20 @@ async function ragAnswer(userQuery, articleText, articleTitle) {
     messages: [
       {
         role: "system",
-        content: `You are a strict data extractor.
+        content: `You are an expert encyclopedic researcher.
 
-Answer the user's question based STRICTLY on the following Wikipedia excerpts from the article titled "${articleTitle}". If the exact answer is not contained in the excerpts, respond with exactly "INFORMATION_NOT_FOUND" and nothing else.
+Answer the user's question comprehensively and in detail, based STRICTLY on the provided text.
+If the user asks a broad question (e.g., about events, summaries, or details), synthesize the information into a rich, well-structured paragraph or bulleted list.
+If the exact answer is not contained in the text, respond with exactly "INFORMATION_NOT_FOUND" and nothing else.
 
 CRITICAL RULES:
-1. BLIND TRUST: Treat the text as the absolute truth. If the text says someone is the "current" president, accept it as the current reality regardless of the actual year.
-2. NEVER mention your "knowledge cutoff", training data, or internal limitations.
-3. NEVER add disclaimers about information being subject to change.
-4. Output ONLY the clear facts found directly in the text.\n\nExcerpts:\n${excerpts}`,
+1. BLIND TRUST: Treat the text as the absolute truth.
+2. COMPREHENSIVE BUT GROUNDED: Provide as much detail as possible. NEVER invent facts outside the text.
+3. NO META-TALK: NEVER mention your knowledge cutoff, training data, or internal limitations.
+4. NO DISCLAIMERS: NEVER add disclaimers about information changing.
+5. AUTHORITATIVE TONE (CRITICAL): NEVER refer to "the excerpts," "the text," "the article," or the fact that you are reading from a source. Do not say "The excerpts mention..." or "I cannot find a clear list." Simply state the facts directly and confidently.
+
+Excerpts:\n${excerpts}`,
       },
       {
         role: "user",
@@ -310,8 +315,8 @@ async function generateReply(history) {
     content: `You are a strict data-routing API. You are NOT a conversational AI.
 
 Research Protocol:
-1. ALLOWED TOOLS: You have EXACTLY TWO tools available: 'search_wikipedia_query' and 'get_wikipedia_article'. Any attempt to call a different tool will crash the system.
-2. YOU MUST READ: Search snippets do NOT contain the answer. After a search, you MUST use 'get_wikipedia_article' to read the main conceptual article (e.g., "President of the United States"). AVOID "List of..." articles.
+1. ALLOWED TOOLS: 'search_wikipedia_query' and 'get_wikipedia_article'. CRITICAL FORMATTING: Never prepend the tool name with tabs (\\t), spaces, or newlines. Use the exact string.
+2. YOU MUST READ: Search snippets do NOT contain the answer. After a search, you MUST use 'get_wikipedia_article' to read the main conceptual article. AVOID "List of..." articles.
 3. ANTI-LAZY RULE: If the tool returns "INFORMATION_NOT_FOUND", search again with new keywords.
 4. NO INNER MONOLOGUE: Do not narrate your thought process.
 5. STRICT PASS-THROUGH (CRITICAL): Once the tool returns the factual answer, output exactly that text. Do not add warnings, notes, knowledge cutoffs, or disclaimers.`,

@@ -217,7 +217,7 @@ async function getHistory(conversationId) {
        FROM messages
        WHERE conversation_id = $1
        ORDER BY created_at DESC
-       LIMIT 10
+       LIMIT 6
      ) AS recent
      ORDER BY created_at ASC`,
     [conversationId]
@@ -280,6 +280,13 @@ async function executeTool(toolCall, userQuery) {
 // ── Coreference resolution: rewrite query to be standalone ──────────────
 
 async function rewriteQuery(history) {
+  // OPTIMIZATION: If this is the first message (or empty), there is no context to resolve.
+  // Bypass the LLM entirely to save an API call and reduce latency!
+  if (history.length <= 1) {
+    console.log("Bypassing rewriteQuery LLM call (no context).");
+    return history[history.length - 1]?.text ?? "";
+  }
+
   const mapped = history.map((m) => ({
     role: m.sender === "user" ? "user" : "assistant",
     content: m.text,

@@ -1,4 +1,4 @@
-import { useState, type FormEvent, type KeyboardEvent } from "react";
+import { useState, useRef, useEffect, type FormEvent, type KeyboardEvent } from "react";
 import styles from "./ChatInput.module.css";
 
 interface Props {
@@ -8,6 +8,14 @@ interface Props {
 
 export default function ChatInput({ onSend, disabled }: Props) {
   const [value, setValue] = useState("");
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+
+  useEffect(() => {
+    const el = textareaRef.current;
+    if (!el) return;
+    el.style.height = "auto";
+    el.style.height = `${el.scrollHeight}px`;
+  }, [value]);
 
   const submit = () => {
     const text = value.trim();
@@ -32,6 +40,7 @@ export default function ChatInput({ onSend, disabled }: Props) {
     <form className={styles.wrapper} onSubmit={handleSubmit}>
       <div className={styles.inputContainer}>
         <textarea
+          ref={textareaRef}
           className={styles.textarea}
           rows={1}
           value={value}

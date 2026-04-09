@@ -131,6 +131,10 @@ export default function ChatPage() {
         </div>
       </header>
 
+      <div className={styles.wikiTitle}>
+        <h1>{activeConvId ? conversations.find((c) => c.id === activeConvId)?.title : "New Chat"}</h1>
+      </div>
+
       <main className={styles.messages}>
         {messages.length === 0 && (
           <div className={styles.empty}><h2>What can I help with?</h2></div>

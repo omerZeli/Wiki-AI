@@ -27,6 +27,13 @@ async function embed(text) {
   return Array.from(output.data);
 }
 
+async function embedBatch(texts) {
+  const model = await getEmbedder();
+  // Pass the entire array of texts at once for optimized backend batching
+  const output = await model(texts, { pooling: "mean", normalize: true });
+  return output.tolist();
+}
+
 // ── In-Memory RAG helpers ───────────────────────────────────────────────
 
 async function chunkText(text) {
@@ -37,19 +44,20 @@ async function chunkText(text) {
   return splitter.splitText(text);
 }
 
-async function findRelevantChunks(query, chunks, topK = 3) {
-  const queryEmbedding = await embed(query);
+async function findRelevantChunks(query, chunks, topK = 8) {
+  const model = await getEmbedder();
 
-  const chunkEmbeddings = await Promise.all(
-    chunks.map(async (chunk) => ({
-      text: chunk,
-      embedding: await embed(chunk),
-    }))
-  );
+  // 1. Embed the user query
+  const queryOutput = await model(query, { pooling: "mean", normalize: true });
+  const queryEmbedding = queryOutput.tolist()[0];
 
-  const scored = chunkEmbeddings.map((c) => ({
-    text: c.text,
-    score: cosineSimilarity(queryEmbedding, c.embedding),
+  // 2. Embed ALL chunks in a single batch call! (Significantly faster)
+  const chunkEmbeddings = await embedBatch(chunks);
+
+  // 3. Calculate cosine similarity
+  const scored = chunks.map((chunk, i) => ({
+    text: chunk,
+    score: cosineSimilarity(queryEmbedding, chunkEmbeddings[i]),
   }));
 
   scored.sort((a, b) => b.score - a.score);
@@ -61,6 +69,12 @@ async function ragAnswer(userQuery, articleText, articleTitle) {
 
   const chunks = await chunkText(articleText);
   console.log(`Split article into ${chunks.length} chunks.`);
+
+  // SAFETY GUARD: Prevent Transformers.js crash if the article is empty or splitting yielded no chunks
+  if (chunks.length === 0) {
+    console.log("No chunks to embed. Returning INFORMATION_NOT_FOUND.");
+    return "INFORMATION_NOT_FOUND";
+  }
 
   const topChunks = await findRelevantChunks(userQuery, chunks, 8);
   console.log(`Found top ${topChunks.length} relevant chunks.`);

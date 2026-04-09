@@ -14,7 +14,17 @@ export default function ChatMessage({ sender, text }: Props) {
       )}
       <div className={`${styles.bubble} ${sender === "user" ? styles.userBubble : styles.serverBubble}`}>
         {sender === "server" ? (
-          <ReactMarkdown>{text}</ReactMarkdown>
+          <ReactMarkdown
+            components={{
+              a: ({ href, children }) => (
+                <a href={href} target="_blank" rel="noopener noreferrer">
+                  {children}
+                </a>
+              ),
+            }}
+          >
+            {text}
+          </ReactMarkdown>
         ) : (
           text
         )}

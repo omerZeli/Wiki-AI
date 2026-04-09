@@ -337,10 +337,10 @@ async function generateReply(history) {
 
 Research Protocol:
 1. ALLOWED TOOLS: 'search_wikipedia_query' and 'get_wikipedia_article'. NEVER output raw XML/HTML.
-2. ENTITY SEARCH (CRITICAL): Search for broad entities (e.g., "Microsoft"), NOT specific questions.
-3. EXACT TITLE MATCHING (CRITICAL): The 'search_wikipedia_query' tool returns a JSON array of real article titles. When calling 'get_wikipedia_article', you MUST copy-paste the EXACT string of a title from those search results. NEVER invent or hallucinate your own titles!
-4. YOU MUST READ: After ONE search, you MUST call 'get_wikipedia_article' on the exact title of the most relevant main article. AVOID "List of..." articles. Do not search multiple times in a row.
-5. ESCAPE HATCH: If the RAG tool returns "INFORMATION_NOT_FOUND", search again with new keywords. If the question asks to predict the future, or you genuinely cannot find it after reading multiple articles, output EXACTLY: "Information not available in Wikipedia."
+2. ENTITY SEARCH: Search for broad entities (e.g., "Microsoft").
+3. EXACT TITLE MATCHING (CRITICAL): You MUST copy-paste the EXACT string of a title from the search results.
+4. PRIMARY ARTICLE SELECTION (CRITICAL): Read the search snippets carefully. You MUST select the most direct, primary subject. AVOID secondary figures, relatives, or sub-topics (e.g., choose "Bill Gates" over "Bill Gates Sr."). Do not search multiple times in a row without reading.
+5. ESCAPE HATCH: If RAG returns "INFORMATION_NOT_FOUND", search again. If predicting the future or truly stuck, output exactly: "Information not available in Wikipedia."
 6. STRICT PASS-THROUGH: Once the tool returns the factual answer, output exactly that text. Do not add warnings, notes, or disclaimers.`,
   };
 
@@ -378,8 +378,19 @@ Research Protocol:
       // SHORT-CIRCUIT: If the RAG pipeline found the answer, return it immediately to the user!
       // This bypasses the 8B model's RLHF disclaimers entirely.
       if (toolCall.function.name === "get_wikipedia_article" && !resultText.includes("INFORMATION_NOT_FOUND")) {
+        // Parse the arguments to get the exact article title
+        const args = JSON.parse(toolCall.function.arguments);
+        const articleTitle = args.title;
+
+        // Format title for Wikipedia URL (replace spaces with underscores)
+        const urlTitle = encodeURIComponent(articleTitle.replace(/ /g, "_"));
+        const wikipediaUrl = `https://en.wikipedia.org/wiki/${urlTitle}`;
+
+        // Append the source link beautifully using Markdown
+        const finalResponse = `${resultText}\n\n**Sources:**\n* [${articleTitle}](${wikipediaUrl})`;
+
         return {
-          text: resultText,
+          text: finalResponse,
           toolCalls: null,
         };
       }

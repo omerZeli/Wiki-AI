@@ -8,13 +8,16 @@
 .header {
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  justify-content: center;
+  position: relative;
   padding: 0.75rem 1.25rem;
   border-bottom: 1px solid var(--border);
   background: var(--bg-secondary);
 }
 
 .headerLeft {
+  position: absolute;
+  left: 1.25rem;
   display: flex;
   align-items: center;
   gap: 0.5rem;
@@ -37,6 +40,17 @@
   color: var(--text-primary);
 }
 
+.headerCenter {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.logoImg {
+  height: 28px;
+  width: auto;
+}
+
 .logo {
   font-size: 1.1rem;
   font-weight: 600;
@@ -44,6 +58,8 @@
 }
 
 .headerRight {
+  position: absolute;
+  right: 1.25rem;
   display: flex;
   align-items: center;
   gap: 0.75rem;

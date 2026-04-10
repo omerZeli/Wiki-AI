@@ -1,5 +1,5 @@
 const { Router } = require("express");
-const { listByUser, getMessages, remove } = require("./conversation.service");
+const { listByUser, getMessages, remove, renameTitle } = require("./conversation.service");
 
 const router = Router();
 
@@ -22,6 +22,23 @@ router.get("/:id/messages", async (req, res) => {
     res.json(messages);
   } catch (err) {
     console.error("Get messages error:", err);
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+router.patch("/:id", async (req, res) => {
+  try {
+    const { title } = req.body;
+    if (!title || !title.trim()) {
+      return res.status(400).json({ error: "Title is required" });
+    }
+    const updated = await renameTitle(req.params.id, req.user.id, title.trim());
+    if (!updated) {
+      return res.status(404).json({ error: "Conversation not found" });
+    }
+    res.json({ success: true });
+  } catch (err) {
+    console.error("Rename conversation error:", err);
     res.status(500).json({ error: "Internal server error" });
   }
 });

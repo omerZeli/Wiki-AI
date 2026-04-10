@@ -50,4 +50,12 @@ async function updateTimestamp(conversationId) {
   await pool.query("UPDATE conversations SET updated_at = NOW() WHERE id = $1", [conversationId]);
 }
 
-module.exports = { listByUser, getMessages, create, verifyOwnership, remove, updateTimestamp };
+async function renameTitle(conversationId, userId, newTitle) {
+  const result = await pool.query(
+    "UPDATE conversations SET title = $1 WHERE id = $2 AND user_id = $3 RETURNING id",
+    [newTitle, conversationId, userId]
+  );
+  return result.rows.length > 0;
+}
+
+module.exports = { listByUser, getMessages, create, verifyOwnership, remove, updateTimestamp, renameTitle };

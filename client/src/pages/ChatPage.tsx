@@ -18,6 +18,9 @@ export default function ChatPage() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [activeConvId, setActiveConvId] = useState<number | null>(null);
+  const [editingTitle, setEditingTitle] = useState(false);
+  const [titleDraft, setTitleDraft] = useState("");
+  const titleInputRef = useRef<HTMLInputElement>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
   const { user, token, logout } = useAuth();
 
@@ -30,6 +33,13 @@ export default function ChatPage() {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages, loading]);
 
+  useEffect(() => {
+    if (editingTitle) {
+      titleInputRef.current?.focus();
+      titleInputRef.current?.select();
+    }
+  }, [editingTitle]);
+
   const fetchConversations = useCallback(async () => {
     try {
       const res = await fetch(`${BASE}/api/conversations`, { headers: authHeaders });
@@ -40,6 +50,43 @@ export default function ChatPage() {
       /* silent */
     }
   }, [token]);
+
+  useEffect(() => {
+    fetchConversations();
+  }, [fetchConversations]);
+
+  const renameConversation = async (id: number, newTitle: string) => {
+    try {
+      const res = await fetch(`${BASE}/api/conversations/${id}`, {
+        method: "PATCH",
+        headers: authHeaders,
+        body: JSON.stringify({ title: newTitle }),
+      });
+      if (res.ok) {
+        setConversations((prev) =>
+          prev.map((c) => (c.id === id ? { ...c, title: newTitle } : c))
+        );
+      }
+    } catch {
+      /* silent */
+    }
+  };
+
+  const startTitleEdit = () => {
+    if (!activeConvId) return;
+    const conv = conversations.find((c) => c.id === activeConvId);
+    setTitleDraft(conv?.title ?? "");
+    setEditingTitle(true);
+  };
+
+  const commitTitleEdit = () => {
+    if (activeConvId && titleDraft.trim()) {
+      renameConversation(activeConvId, titleDraft.trim());
+    }
+    setEditingTitle(false);
+  };
+
+  const cancelTitleEdit = () => setEditingTitle(false);
 
   useEffect(() => {
     fetchConversations();
@@ -113,6 +160,7 @@ export default function ChatPage() {
         onSelect={loadConversation}
         onNew={startNewChat}
         onDelete={deleteConversation}
+        onRename={renameConversation}
         onClose={() => setSidebarOpen(false)}
       />
 
@@ -132,7 +180,43 @@ export default function ChatPage() {
       </header>
 
       <div className={styles.wikiTitle}>
-        <h1>{activeConvId ? conversations.find((c) => c.id === activeConvId)?.title : "New Chat"}</h1>
+        {editingTitle ? (
+          <>
+            <input
+              ref={titleInputRef}
+              className={styles.wikiTitleInput}
+              value={titleDraft}
+              onChange={(e) => setTitleDraft(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") commitTitleEdit();
+                if (e.key === "Escape") cancelTitleEdit();
+              }}
+            />
+            <div className={styles.wikiTitleActions}>
+              <button className={styles.wikiTitleBtn} onClick={commitTitleEdit} aria-label="Confirm rename">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <polyline points="20 6 9 17 4 12" />
+                </svg>
+              </button>
+              <button className={styles.wikiTitleBtnCancel} onClick={cancelTitleEdit} aria-label="Cancel rename">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" />
+                </svg>
+              </button>
+            </div>
+          </>
+        ) : (
+          <>
+            <h1>{activeConvId ? conversations.find((c) => c.id === activeConvId)?.title : "New Chat"}</h1>
+            {activeConvId && (
+              <button className={styles.wikiTitleEditBtn} onClick={startTitleEdit} aria-label="Edit title">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 1 1 3.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+                </svg>
+              </button>
+            )}
+          </>
+        )}
       </div>
 
       <main className={styles.messages}>

@@ -56,86 +56,59 @@ When you ask a question, Wiki AI doesn't just guess — it follows a structured 
 
 ### Prerequisites
 
-- [Docker](https://www.docker.com/)
-- A [Groq API key](https://console.groq.com/)
+- [Node.js](https://nodejs.org/) (v20+)
+- [Docker](https://www.docker.com/) & Docker Compose
+- A [Groq API](https://console.groq.com/) key
 
-### 1. Clone the repository
+### 1. Clone the repo
 
 ```bash
-git clone https://github.com/your-username/wiki-ai.git
+git clone https://github.com/omerZeli/wiki-ai.git
 cd wiki-ai
 ```
 
-### 2. Set up environment variables
-
-```bash
-cp server/.env.example server/.env
-cp client/.env.example client/.env
-```
-
-Edit `server/.env` and add your `GROQ_API_KEY` and `JWT_SECRET`.
-
-### 3. Choose how to run
-
-There are two ways to get up and running:
-
-| | Option A — Docker | Option B — Local Dev |
-|---|---|---|
-| Best for | Running / demoing the app | Active development with hot-reload |
-| What's containerized | Everything (DB + Server + Client) | Database only |
-| Extra requirements | None | Node.js v20+ |
-
----
-
-### Option A — Run everything with Docker
-
-Spin up the entire stack with a single command:
-
-```bash
-docker compose up --build
-```
-
-This starts PostgreSQL, the API server, and the client (Nginx).
-
-Open [http://localhost:8080](http://localhost:8080) and you're good to go.
-
----
-
-### Option B — Local development
-
-Run only the database in Docker, and start the server & client locally for hot-reload and a faster feedback loop.
-
-#### 1. Start the database
-
-```bash
-docker compose -f docker-compose.dev.yml up -d
-```
-
-#### 2. Install dependencies
+### 2. Configure environment variables
 
 ```bash
 # Server
-cd server
-npm install
+cp server/.env.example server/.env
+# Edit server/.env and fill in:
+#   GROQ_API_KEY=your_groq_key
+#   JWT_SECRET=a-strong-random-secret
 
 # Client
-cd ../client
-npm install
+cp client/.env.example client/.env
+# Default API URL is http://localhost:3000 — adjust if needed
 ```
 
-#### 3. Run the app
+### 3. Run with Docker (recommended)
 
 ```bash
-# Terminal 1 — Server
+# Full stack (DB + Server + Client)
+docker compose up --build
+
+# App available at http://localhost:8080
+# API available at http://localhost:3000
+```
+
+### 4. Run locally for development
+
+```bash
+# Start only the database
+docker compose -f docker-compose.dev.yml up -d
+
+# Server
 cd server
+npm install
 npm start
 
-# Terminal 2 — Client
+# Client (in a separate terminal)
 cd client
+npm install
 npm run dev
 ```
 
-Open [http://localhost:5173](http://localhost:5173) in your browser.
+The client dev server runs at `http://localhost:5173` and the API at `http://localhost:3000`.
 
 ## Project Structure
 

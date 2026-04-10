@@ -161,6 +161,10 @@ const tools = [
 
 // ── Wikipedia helper functions ──────────────────────────────────────────
 
+const WIKI_HEADERS = {
+  "User-Agent": "MyRAGBot/1.0 (contact@example.com)",
+};
+
 async function searchWikipedia(query) {
   const params = new URLSearchParams({
     action: "query",
@@ -171,7 +175,7 @@ async function searchWikipedia(query) {
     origin: "*",
   });
 
-  const res = await fetch(`${WIKIPEDIA_API}?${params}`);
+  const res = await fetch(`${WIKIPEDIA_API}?${params}`, { headers: WIKI_HEADERS });
   if (!res.ok) throw new Error(`Wikipedia search failed: ${res.statusText}`);
 
   const data = await res.json();
@@ -192,7 +196,7 @@ async function getWikipediaArticle(title) {
     origin: "*",
   });
 
-  const res = await fetch(`${WIKIPEDIA_API}?${params}`);
+  const res = await fetch(`${WIKIPEDIA_API}?${params}`, { headers: WIKI_HEADERS });
   if (!res.ok) throw new Error(`Wikipedia article fetch failed: ${res.statusText}`);
 
   const data = await res.json();

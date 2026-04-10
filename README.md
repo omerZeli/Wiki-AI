@@ -56,8 +56,7 @@ When you ask a question, Wiki AI doesn't just guess — it follows a structured 
 
 ### Prerequisites
 
-- [Node.js](https://nodejs.org/) v20+
-- [PostgreSQL](https://www.postgresql.org/) 16+ (or Docker)
+- [Docker](https://www.docker.com/)
 - A [Groq API key](https://console.groq.com/)
 
 ### 1. Clone the repository
@@ -70,29 +69,49 @@ cd wiki-ai
 ### 2. Set up environment variables
 
 ```bash
-# Server
 cp server/.env.example server/.env
-# Edit server/.env and add your GROQ_API_KEY and JWT_SECRET
-
-# Client
 cp client/.env.example client/.env
 ```
 
-**`server/.env`**
-```env
-PORT=3000
-CLIENT_URL=http://localhost:5173
-GROQ_API_KEY=your_groq_api_key_here
-DATABASE_URL=postgresql://postgres:postgres@localhost:5432/wiki_ai
-JWT_SECRET=change_this_to_a_random_secret_key
+Edit `server/.env` and add your `GROQ_API_KEY` and `JWT_SECRET`.
+
+### 3. Choose how to run
+
+There are two ways to get up and running:
+
+| | Option A — Docker | Option B — Local Dev |
+|---|---|---|
+| Best for | Running / demoing the app | Active development with hot-reload |
+| What's containerized | Everything (DB + Server + Client) | Database only |
+| Extra requirements | None | Node.js v20+ |
+
+---
+
+### Option A — Run everything with Docker
+
+Spin up the entire stack with a single command:
+
+```bash
+docker compose up --build
 ```
 
-**`client/.env`**
-```env
-VITE_API_URL=http://localhost:3000
+This starts PostgreSQL, the API server, and the client (Nginx).
+
+Open [http://localhost:8080](http://localhost:8080) and you're good to go.
+
+---
+
+### Option B — Local development
+
+Run only the database in Docker, and start the server & client locally for hot-reload and a faster feedback loop.
+
+#### 1. Start the database
+
+```bash
+docker compose -f docker-compose.dev.yml up -d
 ```
 
-### 3. Install dependencies
+#### 2. Install dependencies
 
 ```bash
 # Server
@@ -104,16 +123,7 @@ cd ../client
 npm install
 ```
 
-### 4. Start the database
-
-Using Docker (recommended):
-```bash
-docker compose -f docker-compose.dev.yml up -d
-```
-
-Or point `DATABASE_URL` in `server/.env` to your own PostgreSQL instance. Tables are created automatically on startup.
-
-### 5. Run the app
+#### 3. Run the app
 
 ```bash
 # Terminal 1 — Server
@@ -126,21 +136,6 @@ npm run dev
 ```
 
 Open [http://localhost:5173](http://localhost:5173) in your browser.
-
-## Docker (Production)
-
-Run the entire stack with a single command:
-
-```bash
-docker compose up --build
-```
-
-This starts:
-- **PostgreSQL** on port `5432`
-- **API server** on port `3000`
-- **Client** (Nginx) on port `8080`
-
-Open [http://localhost:8080](http://localhost:8080).
 
 ## Project Structure
 
@@ -178,7 +173,3 @@ wiki-ai/
 | `GET`    | `/api/conversations/:id/messages` | Yes  | Get messages in a thread     |
 | `PATCH`  | `/api/conversations/:id`          | Yes  | Rename a conversation        |
 | `DELETE` | `/api/conversations/:id`          | Yes  | Delete a conversation        |
-
-## License
-
-This project is open source and available under the [MIT License](LICENSE).

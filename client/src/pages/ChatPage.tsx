@@ -171,6 +171,12 @@ export default function ChatPage() {
               <line x1="3" y1="6" x2="21" y2="6" /><line x1="3" y1="12" x2="21" y2="12" /><line x1="3" y1="18" x2="21" y2="18" />
             </svg>
           </button>
+          <button className={styles.menuBtn} onClick={startNewChat} aria-label="New chat">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M12 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
+              <path d="M18.375 2.625a2.121 2.121 0 1 1 3 3L12 15l-4 1 1-4 9.375-9.375z" />
+            </svg>
+          </button>
         </div>
         <div className={styles.headerCenter}>
           <img src="/wikiAILogo-sm.png" alt="" className={styles.logoImg} />

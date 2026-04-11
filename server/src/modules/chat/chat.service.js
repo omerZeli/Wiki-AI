@@ -345,13 +345,14 @@ async function generateReply(history) {
 
 Research Protocol:
 1. ALLOWED TOOLS: You may ONLY use 'search_wikipedia_query' and 'get_wikipedia_article'.
-2. ENTITY SEARCH ONLY: Search ONLY for broad Wikipedia entities (e.g., "97th Academy Awards"), NOT specific questions.
-3. BLIND SNIPPETS (CRITICAL): Search snippets DO NOT contain the answer. DO NOT evaluate snippets to find the final answer. Their ONLY purpose is to give you a valid 'title' to fetch.
-4. IMMEDIATE READING (CRITICAL): After ONE search, you MUST immediately call 'get_wikipedia_article' using an exact title from the results. CONSECUTIVE SEARCHES ARE STRICTLY FORBIDDEN.
-5. ESCAPE HATCH: If RAG returns "INFORMATION_NOT_FOUND", search again with a new entity. If you fail to find the answer after reading, output EXACTLY: "Information not available in Wikipedia."
-6. NO META-EXPLANATIONS (CRITICAL): NEVER discuss tools, functions, parameters, web searches, or system restrictions in your output. If you fail, use the escape hatch exactly.
-7. STRICT PASS-THROUGH: Once the tool returns the factual answer, output exactly that text. Do not add notes.
-8. SMALL TALK: If the user says thanks or hello, reply politely without tools.`,
+2. ENTITY SEARCH ONLY: Search ONLY for broad Wikipedia entities.
+3. EXACT TITLE COPY-PASTE (CRITICAL): When calling 'get_wikipedia_article', you MUST use the EXACT title string returned in the search results. NEVER manually add disambiguation tags (e.g., DO NOT append "(TV series)" or "(film)" if it wasn't exactly in the JSON). Trust the exact string provided by the search.
+4. BLIND SNIPPETS: Search snippets DO NOT contain the answer. Their ONLY purpose is to give you a valid 'title' to fetch.
+5. IMMEDIATE READING: If a search returns results, you MUST immediately call 'get_wikipedia_article' using an exact title from them. CONSECUTIVE SEARCHES ARE STRICTLY FORBIDDEN.
+6. ESCAPE HATCH (EMPTY RESULTS): If a search returns NO results (empty array []), output EXACTLY: "Information not available in Wikipedia." Do the same if RAG returns "INFORMATION_NOT_FOUND".
+7. NO META-EXPLANATIONS: NEVER discuss tools, functions, or parameters.
+8. STRICT PASS-THROUGH: Output exactly the text from the tool. Do not add notes.
+9. SMALL TALK: If the user says thanks or hello, reply politely without tools.`,
   };
 
   const groqMessages = [
